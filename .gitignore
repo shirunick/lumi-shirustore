@@ -1,0 +1,9 @@
+node_modules/
+dist/
+docs/
+*.log
+.DS_Store
+coverage/
+.env*
+preview/preview.js
+.public-release/
