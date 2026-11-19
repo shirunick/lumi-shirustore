@@ -640,7 +640,7 @@ export function addShiruStoreStyles(ctx: SpindleFrontendContext): () => void {
       background: color-mix(in srgb, var(--ss-bg-deep) 60%, transparent);
       -webkit-backdrop-filter: blur(6px);
       backdrop-filter: blur(6px);
-      color: var(--ss-primary-contrast);
+      color: var(--lumiverse-text, #fff);
       font-size: 11px;
       font-weight: 700;
       line-height: 1.2;

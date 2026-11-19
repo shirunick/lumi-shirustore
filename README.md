@@ -5,7 +5,7 @@
 </p>
 
 <p align="center">
-  <img alt="version" src="https://img.shields.io/badge/version-v0.1.1-purple" />
+  <img alt="version" src="https://img.shields.io/badge/version-v0.1.2-purple" />
 </p>
 
 A [Datacat](https://datacat.run) character store for [Lumiverse](https://github.com/prolix-oc/Lumiverse). Browse, swipe, and import cards without leaving the app. Made mobile first, optimized for desktop as well.
@@ -63,6 +63,7 @@ Your first import may open a Datacat security check. If your browser blocks it, 
 
 - Follows and collections are stored in ShiruStore, not in your Datacat account.
 - Excluding tags often works better than including them, because a lot of cards skip obvious tags.
+- Pairs well with [LumiLens](https://github.com/shirunick/lumilens). Turn on **Warm on create** in LumiLens and Ari will write pitches and Tinder blurbs in the background as you import cards here.
 
 ## License
 
