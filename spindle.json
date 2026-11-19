@@ -1,0 +1,13 @@
+{
+  "version": "0.1.1",
+  "name": "ShiruStore",
+  "identifier": "shirustore",
+  "author": "shirunick",
+  "github": "https://github.com/shirunick/lumi-shirustore",
+  "homepage": "https://github.com/shirunick/lumi-shirustore",
+  "description": "Browse and import Datacat character cards in Lumiverse — Discover, Hunt, Shelf, and one-tap import.",
+  "permissions": ["characters", "cors_proxy"],
+  "entry_backend": "dist/backend.js",
+  "entry_frontend": "dist/frontend.js",
+  "minimum_lumiverse_version": "0.1.0"
+}
