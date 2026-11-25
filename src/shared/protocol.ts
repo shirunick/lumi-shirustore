@@ -59,6 +59,10 @@ export type BackendToFrontend =
       requestId: string
       message: string
     }
+  | {
+      type: 'imports_changed'
+      value: unknown
+    }
 
 export function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === 'object' && value !== null && !Array.isArray(value)
@@ -128,4 +132,13 @@ export function parseFrontendMessage(
     default:
       return null
   }
+}
+
+export function parseBackendPush(
+  value: unknown,
+): Extract<BackendToFrontend, { type: 'imports_changed' }> | null {
+  if (!isRecord(value)) return null
+  if (value.type !== 'imports_changed') return null
+  if (!('value' in value)) return null
+  return { type: 'imports_changed', value: value.value }
 }

@@ -5,7 +5,7 @@
 </p>
 
 <p align="center">
-  <img alt="version" src="https://img.shields.io/badge/version-v0.1.2-purple" />
+  <img alt="version" src="https://img.shields.io/badge/version-v0.1.3-purple" />
 </p>
 
 A [Datacat](https://datacat.run) character store for [Lumiverse](https://github.com/prolix-oc/Lumiverse). Browse, swipe, and import cards without leaving the app. Made mobile first, optimized for desktop as well.

@@ -442,3 +442,23 @@ export async function deleteLumiverseCharacter(
     String(record.error || `Could not delete character (${res.status})`),
   )
 }
+
+export async function lumiverseCharacterExists(
+  lumiverseId: string,
+  signal?: AbortSignal,
+): Promise<boolean> {
+  const id = String(lumiverseId || '').trim()
+  if (!id) return false
+  const init: RequestInit = {
+    method: 'GET',
+    credentials: 'include',
+    headers: { Accept: 'application/json' },
+  }
+  if (signal) init.signal = signal
+  const res = await fetch(
+    `/api/v1/characters/${encodeURIComponent(id)}`,
+    init,
+  )
+  if (res.status === 404) return false
+  return res.ok
+}

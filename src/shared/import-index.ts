@@ -84,6 +84,26 @@ export function removeImportRecord(
   return records.filter((row) => row.datacatId !== id)
 }
 
+export function removeImportsByLumiverseId(
+  records: ImportRecord[],
+  lumiverseId: string,
+): ImportRecord[] {
+  const id = String(lumiverseId || '').trim()
+  if (!id) return records
+  return records.filter((row) => row.lumiverseId !== id)
+}
+
+export function removeImportsByLumiverseIds(
+  records: ImportRecord[],
+  lumiverseIds: Iterable<string>,
+): ImportRecord[] {
+  const drop = new Set(
+    [...lumiverseIds].map((id) => String(id || '').trim()).filter(Boolean),
+  )
+  if (!drop.size) return records
+  return records.filter((row) => !drop.has(row.lumiverseId))
+}
+
 export function importedIdSet(records: ImportRecord[]): Set<string> {
   return new Set(records.map((row) => row.datacatId))
 }

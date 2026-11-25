@@ -1,7 +1,8 @@
 import type { SpindleFrontendContext } from 'lumiverse-spindle-types'
-import type {
-  BackendToFrontend,
-  FrontendToBackend,
+import {
+  parseBackendPush,
+  type BackendToFrontend,
+  type FrontendToBackend,
 } from '../shared/protocol'
 
 type DistributiveOmit<T, K extends PropertyKey> = T extends unknown
@@ -15,10 +16,15 @@ type Pending = {
   reject: (reason: Error) => void
 }
 
+type PushHandler = (
+  message: Extract<BackendToFrontend, { type: 'imports_changed' }>,
+) => void
+
 const REQUEST_TIMEOUT_MS = 30_000
 
 export class RpcClient {
   private readonly pending = new Map<string, Pending>()
+  private readonly pushHandlers = new Set<PushHandler>()
   private readonly unsubscribe: () => void
   private seq = 0
   private destroyed = false
@@ -33,10 +39,18 @@ export class RpcClient {
     if (this.destroyed) return
     this.destroyed = true
     this.unsubscribe()
+    this.pushHandlers.clear()
     for (const [, entry] of this.pending) {
       entry.reject(new Error('ShiruStore RPC client destroyed'))
     }
     this.pending.clear()
+  }
+
+  onPush(handler: PushHandler): () => void {
+    this.pushHandlers.add(handler)
+    return () => {
+      this.pushHandlers.delete(handler)
+    }
   }
 
   request(
@@ -91,6 +105,16 @@ export class RpcClient {
   }
 
   private onMessage(payload: unknown): void {
+    const push = parseBackendPush(payload)
+    if (push) {
+      for (const handler of this.pushHandlers) {
+        try {
+          handler(push)
+        } catch {
+        }
+      }
+      return
+    }
     if (!payload || typeof payload !== 'object') return
     const record = payload as BackendToFrontend
     if (!('requestId' in record) || typeof record.requestId !== 'string') return

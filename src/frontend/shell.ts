@@ -21,6 +21,7 @@ import {
 import {
   filterOutImported,
   importedIdSet,
+  normalizeImportList,
   removeImportRecord,
   upsertImportRecord,
   type ImportRecord,
@@ -59,6 +60,7 @@ import {
 import {
   deleteLumiverseCharacter,
   importDatacatCharacter,
+  lumiverseCharacterExists,
   openImportVerifyPopup,
 } from './api/import-character'
 import { chatPickerOptions, resolveAndOpenChat } from './api/open-chat'
@@ -138,6 +140,7 @@ export function mountShell(opts: {
   const abort = new AbortController()
   let searchTimer: ReturnType<typeof setTimeout> | null = null
   let detail: DetailSheet | null = null
+  let openDetailCharacterId: string | null = null
   let filterUi: { destroy: () => void } | null = null
   let browseSerial = 0
   let freshSerial = 0
@@ -245,6 +248,52 @@ export function mountShell(opts: {
       )
       throw error
     }
+  }
+
+  function refreshViewsAfterImportsChange(): void {
+    if (active === 'library') renderLibrary()
+    if (active === 'discover') {
+      if (discoverMode === 'fresh') renderDiscover()
+      else renderFeed(discoverMode)
+    }
+    if (active === 'browse') renderBrowse()
+  }
+
+  function applyImportsFromHost(next: ImportRecord[]): void {
+    if (dirtyImports) return
+    imports = next
+    if (openDetailCharacterId && detail) {
+      const still = imports.find((row) => row.datacatId === openDetailCharacterId)
+      detail.setImported(still ? still.lumiverseId : null)
+    }
+    refreshViewsAfterImportsChange()
+  }
+
+  async function reconcileImportedState(
+    datacatId: string,
+    sheet: DetailSheet,
+  ): Promise<void> {
+    const imported = imports.find((row) => row.datacatId === datacatId)
+    if (!imported) {
+      sheet.setImported(null)
+      return
+    }
+    let exists = false
+    try {
+      exists = await lumiverseCharacterExists(imported.lumiverseId, abort.signal)
+    } catch {
+      sheet.setImported(imported.lumiverseId)
+      return
+    }
+    if (abort.signal.aborted || openDetailCharacterId !== datacatId) return
+    if (exists) {
+      sheet.setImported(imported.lumiverseId)
+      return
+    }
+    await persistImports(removeImportRecord(imports, datacatId))
+    if (abort.signal.aborted || openDetailCharacterId !== datacatId) return
+    sheet.setImported(null)
+    refreshViewsAfterImportsChange()
   }
 
   async function persistFollows(next: FollowedCreator[]): Promise<void> {
@@ -2310,6 +2359,7 @@ export function mountShell(opts: {
 
   function closeDetail(): void {
     clearDetailLoading()
+    openDetailCharacterId = null
     const current = detail
     detail = null
     current?.destroy()
@@ -2413,8 +2463,6 @@ export function mountShell(opts: {
         void openCreator(ref, row.creatorName)
       },
     })
-    const imported = imports.find((row) => row.datacatId === character.id)
-    if (imported) holder.sheet.setImported(imported.lumiverseId)
     const already = playlists.some((playlist) =>
       playlist.characterIds.includes(character.id),
     )
@@ -2475,8 +2523,10 @@ export function mountShell(opts: {
       return
     }
     clearDetailLoading()
+    openDetailCharacterId = full.id
     detail = bindDetail(full)
     if (community) detail.setCommunity(community)
+    await reconcileImportedState(full.id, detail)
   }
 
   async function runImport(
@@ -2528,6 +2578,11 @@ export function mountShell(opts: {
       setStatus(message, true)
     }
   }
+
+  const stopImportPush = rpc.onPush((message) => {
+    if (message.type !== 'imports_changed') return
+    applyImportsFromHost(normalizeImportList(message.value))
+  })
 
   void rpc
     .request({ type: 'health' }, abort.signal)
@@ -2588,6 +2643,7 @@ export function mountShell(opts: {
   return {
     destroy: () => {
       abort.abort()
+      stopImportPush()
       if (searchTimer) clearTimeout(searchTimer)
       if (statusTimer) clearTimeout(statusTimer)
       stopBrowseObserver?.()
